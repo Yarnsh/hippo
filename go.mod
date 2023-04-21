@@ -1,6 +1,6 @@
 module github.com/Yarnsh/hippo
 
-go 1.17
+go 1.20
 
 require (
 	github.com/fzipp/astar v0.2.0
