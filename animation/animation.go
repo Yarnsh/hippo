@@ -331,6 +331,13 @@ func (anim Animation) GetRotation(time float64) (float64) {
 	return getInterpolatedValueFromReversedTimeKeysAndValueMap(anim.rotation, anim.rotation_keys, time, anim.length)
 }
 
+func maybeNegate(value float64, negate bool) (float64) {
+	if negate {
+		return -value
+	}
+	return value
+}
+
 // TODO: currently animations are always drawn with the origin at the bottom middle of the sprite, give other options
 // TODO: need to have draw methods actually just add to a depth sorted queue to draw with later, so we can meaningfully have a zpos
 func (anim Animation) Draw(target *ebiten.Image, xpos, ypos, scale, time float64) {
