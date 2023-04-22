@@ -27,6 +27,12 @@ func (pair FloatPair) Minus(other FloatPair) FloatPair {
 		Y: pair.Y - other.Y,
 	}
 }
+func (pair FloatPair) Plus(other FloatPair) FloatPair {
+	return FloatPair {
+		X: pair.X + other.X,
+		Y: pair.Y + other.Y,
+	}
+}
 func (pair FloatPair) Multiply(other float64) FloatPair {
 	return FloatPair {
 		X: pair.X * other,
@@ -37,6 +43,12 @@ func (pair IntPair) Minus(other IntPair) IntPair {
 	return IntPair {
 		X: pair.X - other.X,
 		Y: pair.Y - other.Y,
+	}
+}
+func (pair IntPair) Plus(other IntPair) IntPair {
+	return IntPair {
+		X: pair.X + other.X,
+		Y: pair.Y + other.Y,
 	}
 }
 
