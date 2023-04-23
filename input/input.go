@@ -32,9 +32,10 @@ type InputActionHandler struct {
 	defined_actions map[string]inputDef
 }
 
-func NewInputActionHandler() {
+func NewInputActionHandler() InputActionHandler {
 	new := InputActionHandler{}
 	new.defined_actions = make(map[string]inputDef)
+	return new
 }
 
 func (i *InputActionHandler) RegisterKeyboardAction(action string, key ebiten.Key) {
