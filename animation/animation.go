@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"path/filepath"
 	"bytes"
+	"fmt"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -341,6 +342,10 @@ func maybeNegate(value float64, negate bool) (float64) {
 // TODO: currently animations are always drawn with the origin at the bottom middle of the sprite, give other options
 // TODO: need to have draw methods actually just add to a depth sorted queue to draw with later, so we can meaningfully have a zpos
 func (anim Animation) Draw(target *ebiten.Image, xpos, ypos, scale, time float64) {
+	if len(anim.frames_keys) == 0 {
+		fmt.Println("Attempting to play animation with no frames!")
+		return
+	}
 	subrect := anim.GetFrameRect(time)
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(-subrect.Dx()/2.0), float64(-subrect.Dy()/2.0))
