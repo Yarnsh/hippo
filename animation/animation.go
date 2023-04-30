@@ -55,6 +55,31 @@ type AnimationMapDefinition struct {
 	Animations map[string]AnimationDefinition `json:"animations"`
 }
 
+func NewFontAnimationMap(image_path string, char_w, char_h, char_per_line, height int) ([]Animation, error) {
+	// A quick way to create an animation map for a static monospaced font
+	// loads animations into the array in english reading order, having the sprite sheet be in ASCII character order would be smart
+	var animations []Animation
+
+	for y := 0; y < height; y++ {
+		for x := 0; x < char_per_line; x++ {
+			frames := make(map[string]int)
+			frames["0"] = 0
+			def := AnimationDefinition{
+				SheetPath: image_path,
+				FrameWidth: char_w,
+				FrameHeight: char_h,
+				FrameOffsetX: x * char_w,
+				FrameOffsetY: y * char_h,
+				Length: 1.0,
+				Frames: frames,
+			}
+			animations = append(animations, NewAnimationFromDefinition(def, ""))
+		}
+	}
+
+	return animations, nil
+}
+
 func LoadAnimationMap(path string) (map[string]Animation, error) {
 	bytes, err := fs.ReadFile(FileSystem, path)
 	if err != nil {
