@@ -384,3 +384,31 @@ func (anim Animation) Draw(target *ebiten.Image, xpos, ypos, scale, time float64
 
 	target.DrawImage(anim.Sheet.SubImage(subrect).(*ebiten.Image), op)
 }
+
+
+type AnimationPlayer struct {
+	anim Animation
+	start_time float64
+}
+
+// TODO: would be nice to have a handler that stores these animations and manages deleting them and such
+// We would need to handle camera positioning and such in here instead of letting the client handle it
+// Would be a good place to handle depth as well so client doesn't need to sort things themselves
+// This is basically making this a higher level engine, as long as its optional probably a good thing
+
+func NewAnimationPlayer(anim Animation, time float64) AnimationPlayer {
+	return AnimationPlayer{anim: anim, start_time: time}
+}
+
+func (p AnimationPlayer) Draw(target *ebiten.Image, xpos, ypos, scale, time float64) bool {
+	// Usual draw method, except time adjusted to the start_time and forced to not loop the animation
+	// Returns if the animation is still playing (time hasnt passed the end)
+	t := time - p.start_time
+	if t > p.anim.length {
+		p.anim.Draw(target, xpos, ypos, scale, p.anim.length)
+		return false
+	} 
+
+	p.anim.Draw(target, xpos, ypos, scale, t)
+	return true
+}
