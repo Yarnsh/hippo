@@ -389,6 +389,7 @@ func (anim Animation) Draw(target *ebiten.Image, xpos, ypos, scale, time float64
 type AnimationPlayer struct {
 	anim Animation
 	start_time float64
+	xpos, ypos, scale float64
 }
 
 // TODO: would be nice to have a handler that stores these animations and manages deleting them and such
@@ -396,19 +397,25 @@ type AnimationPlayer struct {
 // Would be a good place to handle depth as well so client doesn't need to sort things themselves
 // This is basically making this a higher level engine, as long as its optional probably a good thing
 
-func NewAnimationPlayer(anim Animation, time float64) AnimationPlayer {
-	return AnimationPlayer{anim: anim, start_time: time}
+func NewAnimationPlayer(anim Animation, xpos, ypos, scale, time float64) AnimationPlayer {
+	return AnimationPlayer {
+		anim: anim,
+		start_time: time,
+		xpos: xpos,
+		ypos: ypos,
+		scale: scale,
+	}
 }
 
-func (p AnimationPlayer) Draw(target *ebiten.Image, xpos, ypos, scale, time float64) bool {
-	// Usual draw method, except time adjusted to the start_time and forced to not loop the animation
+func (p AnimationPlayer) Draw(target *ebiten.Image, time float64) bool {
+	// Time adjusted to the start_time and forced to not loop the animation
 	// Returns if the animation is still playing (time hasnt passed the end)
 	t := time - p.start_time
 	if t > p.anim.length {
-		p.anim.Draw(target, xpos, ypos, scale, p.anim.length)
+		p.anim.Draw(target, p.xpos, p.ypos, p.scale, p.anim.length)
 		return false
 	} 
 
-	p.anim.Draw(target, xpos, ypos, scale, t)
+	p.anim.Draw(target, p.xpos, p.ypos, p.scale, t)
 	return true
 }
