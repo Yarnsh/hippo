@@ -18,9 +18,16 @@ import (
 
 var (
 	FileSystem = os.DirFS(".")
+
+	SHEET_CACHE = make(map[string]*ebiten.Image) // We never unload cached data yet, but if need be we can just clear this variable
 )
 
 func NewEbitenImage(path string) (*ebiten.Image) {
+	cached_image, cached := SHEET_CACHE[path]
+	if cached {
+		return cached_image
+	}
+
 	dat, err := fs.ReadFile(FileSystem, filepath.ToSlash(path))
 	if err != nil {
 		panic(err)
@@ -30,6 +37,7 @@ func NewEbitenImage(path string) (*ebiten.Image) {
 		panic(err)
 	}
 	result := ebiten.NewImageFromImage(img)
+	SHEET_CACHE[path] = result
 	return result
 }
 
@@ -61,7 +69,7 @@ type MetaAnimationDefinition struct {
     XOffsets map[string]float64  `json:"x_offsets"`
     YOffsets map[string]float64  `json:"y_offsets"`
     Scales map[string]float64  `json:"scales"`
-    Times map[string]float64  `json:"times"`
+    Times map[string]float64  `json:"times"` // currently just functions as a time offset
 }
 
 type MetaAnimationMapDefinition struct {
