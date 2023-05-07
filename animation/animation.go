@@ -20,6 +20,8 @@ var (
 	FileSystem = os.DirFS(".")
 
 	SHEET_CACHE = make(map[string]*ebiten.Image) // We never unload cached data yet, but if need be we can just clear this variable
+	ANIMATION_MAP_CACHE = make(map[string](map[string]Animation)) // We cache the full maps too to save on json parsing and file reading
+	META_ANIMATION_MAP_CACHE = make(map[string](map[string]MetaAnimationList))
 )
 
 func NewEbitenImage(path string) (*ebiten.Image) {
@@ -103,6 +105,11 @@ func NewFontAnimationMap(image_path string, char_w, char_h, char_per_line, heigh
 }
 
 func LoadAnimationMap(path string) (map[string]Animation, error) {
+	cached_map, cached := ANIMATION_MAP_CACHE[path]
+	if cached {
+		return cached_map, nil
+	}
+
 	bytes, err := fs.ReadFile(FileSystem, path)
 	if err != nil {
 		return nil, err
@@ -119,10 +126,16 @@ func LoadAnimationMap(path string) (map[string]Animation, error) {
 		animations[name] = NewAnimationFromDefinition(animdef, filepath.Dir(path))
 	}
 
+	ANIMATION_MAP_CACHE[path] = animations
 	return animations, nil
 }
 
 func LoadMetaAnimationMap(path string) (map[string]MetaAnimationList, error) {
+	cached_map, cached := META_ANIMATION_MAP_CACHE[path]
+	if cached {
+		return cached_map, nil
+	}
+
 	bytes, err := fs.ReadFile(FileSystem, path)
 	if err != nil {
 		return nil, err
@@ -144,6 +157,7 @@ func LoadMetaAnimationMap(path string) (map[string]MetaAnimationList, error) {
 		animations[name] = NewMetaAnimationFromDefinition(animdef, filepath.Dir(path), anims)
 	}
 
+	META_ANIMATION_MAP_CACHE[path] = animations
 	return animations, nil
 }
 
