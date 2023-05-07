@@ -55,6 +55,20 @@ type AnimationMapDefinition struct {
 	Animations map[string]AnimationDefinition `json:"animations"`
 }
 
+type MetaAnimationDefinition struct {
+    Length float64 `json:"length"`
+    AnimNames map[string]string  `json:"anim_names"`
+    XOffsets map[string]float64  `json:"x_offsets"`
+    YOffsets map[string]float64  `json:"y_offsets"`
+    Scales map[string]float64  `json:"scales"`
+    Times map[string]float64  `json:"times"`
+}
+
+type MetaAnimationMapDefinition struct {
+	AnimationsPath string `json:"animations_path"`
+	MetaAnimations map[string][]MetaAnimationDefinition `json:"meta_animations"`
+}
+
 func NewFontAnimationMap(image_path string, char_w, char_h, char_per_line, height int) ([]Animation, error) {
 	// A quick way to create an animation map for a static monospaced font
 	// loads animations into the array in english reading order, having the sprite sheet be in ASCII character order would be smart
@@ -95,6 +109,31 @@ func LoadAnimationMap(path string) (map[string]Animation, error) {
 	animations := make(map[string]Animation)
 	for name, animdef := range def.Animations {
 		animations[name] = NewAnimationFromDefinition(animdef, filepath.Dir(path))
+	}
+
+	return animations, nil
+}
+
+func LoadMetaAnimationMap(path string) (map[string]MetaAnimationList, error) {
+	bytes, err := fs.ReadFile(FileSystem, path)
+	if err != nil {
+		return nil, err
+	}
+
+	var def MetaAnimationMapDefinition
+	err = json.Unmarshal(bytes, &def)
+	if err != nil {
+		return nil, err
+	}
+
+	anims, aerr := LoadAnimationMap(def.AnimationsPath)
+	if aerr != nil {
+		return nil, aerr
+	}
+
+	animations := make(map[string]MetaAnimationList)
+	for name, animdef := range def.MetaAnimations {
+		animations[name] = NewMetaAnimationFromDefinition(animdef, filepath.Dir(path), anims)
 	}
 
 	return animations, nil
@@ -151,6 +190,23 @@ func getReverseSortedSliceOfKeys3(data map[string]bool) ([]float64){
 	return keys
 }
 
+func getReverseSortedSliceOfKeys4(data map[string]string) ([]float64){
+	keys := make([]float64, len(data))
+
+	i := 0
+	for k := range data {
+		key_float, err := strconv.ParseFloat(k, 64)
+		if err != nil {
+			panic(err)
+		}
+	    keys[i] = key_float
+	    i++
+	}
+
+	sort.Slice(keys, func(i, j int) bool { return keys[i] > keys[j] })
+	return keys
+}
+
 func floatifyKeys2(data map[string]float64) (map[float64]float64) {
 	result := make(map[float64]float64)
 	for k, v := range data {
@@ -165,6 +221,18 @@ func floatifyKeys2(data map[string]float64) (map[float64]float64) {
 
 func floatifyKeys3(data map[string]bool) (map[float64]bool) {
 	result := make(map[float64]bool)
+	for k, v := range data {
+		key_float, err := strconv.ParseFloat(k, 64)
+		if err != nil {
+			panic(err)
+		}
+		result[key_float] = v
+	}
+	return result
+}
+
+func floatifyKeys4(data map[string]string) (map[float64]string) {
+	result := make(map[float64]string)
 	for k, v := range data {
 		key_float, err := strconv.ParseFloat(k, 64)
 		if err != nil {
@@ -264,6 +332,78 @@ func NewAnimationFromDefinition(def AnimationDefinition, parent_path string) (An
 	}
 }
 
+type MetaAnimationList struct {
+	meta_anims []MetaAnimation
+}
+
+func (m MetaAnimationList) Draw(target *ebiten.Image, xpos, ypos, scale, time float64) {
+	for _, anim := range m.meta_anims {
+		anim.Draw(target, xpos, ypos, scale, time)
+	}
+}
+
+func (m MetaAnimationList) GetLength() float64 {
+	if len(m.meta_anims) > 0 {
+		return m.meta_anims[0].GetLength()
+	}
+	return 0.0
+}
+
+func NewMetaAnimationFromDefinition(defs []MetaAnimationDefinition, parent_path string, anims map[string]Animation) (MetaAnimationList) {
+	result := MetaAnimationList{}
+	for _, def := range defs {
+		// Some defaults in case we are missing values
+		// This feels messy, maybe there is a better way
+		if def.AnimNames == nil {
+			def.AnimNames = make(map[string]string)
+		}
+		if len(def.AnimNames) == 0 {
+			def.AnimNames["0.0"] = "default"
+		}
+		if def.XOffsets == nil {
+			def.XOffsets = make(map[string]float64)
+		}
+		if len(def.XOffsets) == 0 {
+			def.XOffsets["0.0"] = 0.0
+		}
+		if def.YOffsets == nil {
+			def.YOffsets = make(map[string]float64)
+		}
+		if len(def.YOffsets) == 0 {
+			def.YOffsets["0.0"] = 0.0
+		}
+		if def.Scales == nil {
+			def.Scales = make(map[string]float64)
+		}
+		if len(def.Scales) == 0 {
+			def.Scales["0.0"] = 1.0
+		}
+		if def.Times == nil {
+			def.Times = make(map[string]float64)
+		}
+		if len(def.Times) == 0 {
+			def.Times["0.0"] = 0.0
+		}
+
+		result.meta_anims = append(result.meta_anims, MetaAnimation{
+			animations: anims,
+			length: def.Length,
+			anim_name: floatifyKeys4(def.AnimNames),
+			anim_name_keys: getReverseSortedSliceOfKeys4(def.AnimNames),
+			x_offset: floatifyKeys2(def.XOffsets),
+			x_offset_keys: getReverseSortedSliceOfKeys2(def.XOffsets),
+			y_offset: floatifyKeys2(def.YOffsets),
+			y_offset_keys: getReverseSortedSliceOfKeys2(def.YOffsets),
+			scale: floatifyKeys2(def.Scales),
+			scale_keys: getReverseSortedSliceOfKeys2(def.Scales),
+			time: floatifyKeys2(def.Times),
+			time_keys: getReverseSortedSliceOfKeys2(def.Times),
+		})
+	}
+
+	return result
+}
+
 type Animation struct {
 	length float64
 	Sheet *ebiten.Image
@@ -329,6 +469,16 @@ func getBoolAtTime(values map[float64]bool, keys []float64, time, max_time float
 	return values[keys[len(keys)-1]]
 }
 
+func getStringAtTime(values map[float64]string, keys []float64, time, max_time float64) (string) {
+	time = math.Mod(time, max_time)
+	for _, key := range keys {
+		if key <= time {
+			return values[key]
+		}
+	}
+	return values[keys[len(keys)-1]]
+}
+
 func (anim Animation) GetXOffset(time float64) (float64) {
 	return getInterpolatedValueFromReversedTimeKeysAndValueMap(anim.x_offset, anim.x_offset_keys, time, anim.length)
 }
@@ -385,9 +535,66 @@ func (anim Animation) Draw(target *ebiten.Image, xpos, ypos, scale, time float64
 	target.DrawImage(anim.Sheet.SubImage(subrect).(*ebiten.Image), op)
 }
 
+func (anim Animation) GetLength() float64 {
+	return anim.length
+}
+
+type MetaAnimation struct {
+	animations map[string]Animation
+	length float64
+	anim_name map[float64]string
+	anim_name_keys []float64
+	x_offset map[float64]float64
+	x_offset_keys []float64 // All other keys should also be sorted highest to lowest to keep things consistent
+	y_offset map[float64]float64
+	y_offset_keys []float64
+	scale map[float64]float64
+	scale_keys []float64
+	time map[float64]float64
+	time_keys []float64
+}
+
+func (anim MetaAnimation) GetXOffset(time float64) (float64) {
+	return getInterpolatedValueFromReversedTimeKeysAndValueMap(anim.x_offset, anim.x_offset_keys, time, anim.length)
+}
+
+func (anim MetaAnimation) GetYOffset(time float64) (float64) {
+	return getInterpolatedValueFromReversedTimeKeysAndValueMap(anim.y_offset, anim.y_offset_keys, time, anim.length)
+}
+
+func (anim MetaAnimation) GetScale(time float64) (float64) {
+	return getInterpolatedValueFromReversedTimeKeysAndValueMap(anim.scale, anim.scale_keys, time, anim.length)
+}
+
+func (anim MetaAnimation) GetAnimName(time float64) (string) {
+	return getStringAtTime(anim.anim_name, anim.anim_name_keys, time, anim.length)
+}
+
+func (anim MetaAnimation) GetTime(time float64) (float64) {
+	return getInterpolatedValueFromReversedTimeKeysAndValueMap(anim.time, anim.time_keys, time, anim.length)
+}
+
+func (anim MetaAnimation) GetLength() float64 {
+	return anim.length
+}
+
+func (anim MetaAnimation) Draw(target *ebiten.Image, xpos, ypos, scale, time float64) {
+	anim.animations[anim.GetAnimName(time)].Draw(
+		target,
+		anim.GetXOffset(time),
+		anim.GetYOffset(time),
+		anim.GetScale(time),
+		anim.GetTime(time))
+}
+
+
+type PlayableAnimation interface {
+	Draw(*ebiten.Image, float64, float64, float64, float64)
+	GetLength() float64
+}
 
 type AnimationPlayer struct {
-	anim Animation
+	anim PlayableAnimation
 	start_time float64
 	xpos, ypos, scale float64
 }
@@ -397,7 +604,7 @@ type AnimationPlayer struct {
 // Would be a good place to handle depth as well so client doesn't need to sort things themselves
 // This is basically making this a higher level engine, as long as its optional probably a good thing
 
-func NewAnimationPlayer(anim Animation, xpos, ypos, scale, time float64) AnimationPlayer {
+func NewAnimationPlayer(anim PlayableAnimation, xpos, ypos, scale, time float64) AnimationPlayer {
 	return AnimationPlayer {
 		anim: anim,
 		start_time: time,
@@ -411,8 +618,8 @@ func (p AnimationPlayer) Draw(target *ebiten.Image, time float64) bool {
 	// Time adjusted to the start_time and forced to not loop the animation
 	// Returns if the animation is still playing (time hasnt passed the end)
 	t := time - p.start_time
-	if t > p.anim.length {
-		p.anim.Draw(target, p.xpos, p.ypos, p.scale, p.anim.length)
+	if t > p.anim.GetLength() {
+		p.anim.Draw(target, p.xpos, p.ypos, p.scale, p.anim.GetLength())
 		return false
 	} 
 
