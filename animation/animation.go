@@ -126,7 +126,7 @@ func LoadMetaAnimationMap(path string) (map[string]MetaAnimationList, error) {
 		return nil, err
 	}
 
-	anims, aerr := LoadAnimationMap(def.AnimationsPath)
+	anims, aerr := LoadAnimationMap(def.AnimationsPath) // TODO: should make this load relative to the metaanim file, right now its relative where we are running
 	if aerr != nil {
 		return nil, aerr
 	}
@@ -581,10 +581,10 @@ func (anim MetaAnimation) GetLength() float64 {
 func (anim MetaAnimation) Draw(target *ebiten.Image, xpos, ypos, scale, time float64) {
 	anim.animations[anim.GetAnimName(time)].Draw(
 		target,
-		anim.GetXOffset(time),
-		anim.GetYOffset(time),
-		anim.GetScale(time),
-		anim.GetTime(time))
+		anim.GetXOffset(time) + xpos,
+		anim.GetYOffset(time) + ypos,
+		anim.GetScale(time) * scale,
+		anim.GetTime(time) + time)
 }
 
 
