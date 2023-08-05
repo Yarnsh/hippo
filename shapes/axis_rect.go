@@ -1,4 +1,4 @@
-package terrain
+package shapes
 
 type AxisRect struct {
 	x int

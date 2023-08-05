@@ -8,6 +8,7 @@ import (
 
 	"github.com/fzipp/astar"
 	"github.com/Yarnsh/hippo/utils"
+	"github.com/Yarnsh/hippo/shapes"
 )
 
 const (
@@ -18,7 +19,7 @@ type void struct{}
 var void_item void
 
 type QuadTreeTerrain struct {
-	space AxisRect
+	space shapes.AxisRect
 	leaf bool
 	leaf_value int
 	sub_trees [4]*QuadTreeTerrain
@@ -34,7 +35,7 @@ func NewQuadTreeTerrain(x int, y int, w int) *QuadTreeTerrain {
 	tree.pixel_x = x
 	tree.pixel_y = y
 	tree.pixel_width = w
-	tree.space = NewAxisRect(x, y, w, w)
+	tree.space = shapes.NewAxisRect(x, y, w, w)
 	tree.leaf = true
 	tree.dirty = false
 
@@ -250,7 +251,7 @@ func (tree QuadTreeTerrain) SweepShape(shape shapes.AxisRect, dirx float64, diry
 	return 2.0, 0.0, 0.0
 }*/
 
-func (tree QuadTreeTerrain) DoesLineCollide(ray Line) bool {
+func (tree QuadTreeTerrain) DoesLineCollide(ray shapes.Line) bool {
 	// TODO: for path finding we need a check like that that considers touching the side of a rectangle as not a collision
 	if tree.leaf && tree.leaf_value == 0 {
 		return false
@@ -280,7 +281,7 @@ func (tree QuadTreeTerrain) ImprovePath(path []utils.IntPair) []utils.IntPair {
 		return path
 	}
 	for idx := 0; idx < len(path) - 2; {
-		if !tree.DoesLineCollide(NewLine(path[idx].X, path[idx].Y, path[idx+1].X, path[idx+1].Y)) {
+		if !tree.DoesLineCollide(shapes.NewLine(path[idx].X, path[idx].Y, path[idx+1].X, path[idx+1].Y)) {
 			// remove idx+1 from the path
 			path = append(path[:idx+1], path[idx+2:]...)
 		} else {
@@ -296,7 +297,7 @@ func (tree QuadTreeTerrain) ImprovePathBeginning(path []utils.IntPair) []utils.I
 		return path
 	}
 	for idx := 0; idx < len(path) - 2; {
-		if !tree.DoesLineCollide(NewLine(path[idx].X, path[idx].Y, path[idx+1].X, path[idx+1].Y)) {
+		if !tree.DoesLineCollide(shapes.NewLine(path[idx].X, path[idx].Y, path[idx+1].X, path[idx+1].Y)) {
 			// remove idx+1 from the path
 			path = append(path[:idx+1], path[idx+2:]...)
 		} else {
@@ -427,7 +428,7 @@ func (tree QuadTreeTerrain) GetAdjacentCorners(x, y int) []utils.IntPair {
 	return result
 }
 
-func (tree QuadTreeTerrain) CircleSeparation(circ Circle) (utils.FloatPair, float64) {
+func (tree QuadTreeTerrain) CircleSeparation(circ shapes.Circle) (utils.FloatPair, float64) {
 	if tree.leaf && tree.leaf_value == 0 {
 		return utils.FloatPair{}, 0
 	}

@@ -1,4 +1,4 @@
-package terrain
+package shapes
 
 import (
 	"github.com/Yarnsh/hippo/utils"
@@ -64,4 +64,19 @@ func (circ Circle) SeparationForAxisRect(other AxisRect) (utils.FloatPair, float
 func (circ Circle) BBIntersectsAxisRect(other AxisRect) bool {
 	// Quick check to see if the bounding box of the circle intersects another rect, for faster pre-checks in quad trees
 	return !((circ.pos.X + circ.radius < float64(other.x)) || (circ.pos.X - circ.radius > float64(other.x2)) || (circ.pos.Y + circ.radius < float64(other.y)) || (circ.pos.Y - circ.radius > float64(other.y2)))
+}
+
+// SHAPE INTERFACE METHODS
+func (circ Circle) Translated(x, y float64) Shape {
+	return NewCircle(circ.x + x, circ.y + y, circ.r)
+}
+func (circ Circle) Rotated(r float64) Shape {
+	return NewCircle(circ.x, circ.y, circ.r + r)
+}
+func (circ Circle) TestCollision(o Shape) (float64, utils.FloatPair, utils.FloatPair) {
+	// TODO: for now just against other circles
+	var depth = -(circ.pos.DistanceTo(o.pos) - circ.radius - o.radius)
+	var dir = o.pos.Minus(circ.pos).Normalized()
+	var p1 = circ.pos.Plus(dir.Multiply(circ.r))
+	var p1 = o.pos.Plus(dir.Negative().Multiply(o.r))
 }

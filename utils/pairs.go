@@ -21,6 +21,12 @@ func (pair FloatPair) Normalized() FloatPair {
 		Y: pair.Y / len,
 	}
 }
+func (pair FloatPair) Negative() FloatPair {
+	return FloatPair {
+		X: -pair.X,
+		Y: -pair.Y,
+	}
+}
 func (pair FloatPair) Minus(other FloatPair) FloatPair {
 	return FloatPair {
 		X: pair.X - other.X,

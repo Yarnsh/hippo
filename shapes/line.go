@@ -1,4 +1,4 @@
-package terrain
+package shapes
 
 func CrossProduct2D(x1 int, y1 int, x2 int, y2 int) float64 {
 	return float64((x1*y2) - (y1*x2))
