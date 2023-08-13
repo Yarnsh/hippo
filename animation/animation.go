@@ -79,7 +79,17 @@ type MetaAnimationMapDefinition struct {
 	MetaAnimations map[string][]MetaAnimationDefinition `json:"meta_animations"`
 }
 
-func NewFontAnimationMap(image_path string, char_w, char_h, char_per_line, height int) ([]Animation, error) {
+type Font struct {
+	Animations []Animation
+	CharacterWidth int
+	CharacterHeight int
+}
+
+func NewFont(image_path string, char_w, char_h, char_per_line, height int) (Font, error) {
+	result := Font{}
+	result.CharacterWidth = char_w
+	result.CharacterHeight = char_h
+
 	// A quick way to create an animation map for a static monospaced font
 	// loads animations into the array in english reading order, having the sprite sheet be in ASCII character order would be smart
 	var animations []Animation
@@ -101,7 +111,22 @@ func NewFontAnimationMap(image_path string, char_w, char_h, char_per_line, heigh
 		}
 	}
 
-	return animations, nil
+	result.Animations = animations
+
+	return result, nil
+}
+
+func (font Font) DrawText(target *ebiten.Image, xpos, ypos, scale, time float64, runes []rune) {
+	// TODO: handle newlines and such
+	for column, char := range runes {
+		// TODO: For some reason we are a row off, hence "- 32", should probably fix that before any numbered version, since it will break things
+		font.Animations[char - 32].Draw(
+			target,
+			xpos + float64(column * font.CharacterWidth),
+			ypos,
+			scale,
+			0.0)
+	}
 }
 
 func LoadAnimationMap(path string) (map[string]Animation, error) {
