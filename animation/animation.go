@@ -125,7 +125,7 @@ func (font Font) DrawText(target *ebiten.Image, xpos, ypos, scale, time float64,
 			xpos + float64(column * font.CharacterWidth),
 			ypos,
 			scale,
-			0.0)
+			time)
 	}
 }
 
