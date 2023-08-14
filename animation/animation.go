@@ -122,7 +122,7 @@ func (font Font) DrawText(target *ebiten.Image, xpos, ypos, scale, time float64,
 		// TODO: For some reason we are a row off, hence "- 32", should probably fix that before any numbered version, since it will break things
 		font.Animations[char - 32].Draw(
 			target,
-			xpos + float64(column * font.CharacterWidth * scale),
+			xpos + float64(column * font.CharacterWidth) * scale,
 			ypos,
 			scale,
 			time)
